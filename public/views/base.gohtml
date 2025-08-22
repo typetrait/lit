@@ -1,0 +1,27 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{.Settings.BlogName}}</title>
+    </head>
+    <body>
+        <h1>{{.Settings.BlogName}}</h1>
+        <p>{{.Settings.BlogSubtitle}}</p>
+        <nav>
+            <ul>
+                <li><a href="/">home</a></li>
+                <li><a href="/posts">posts</a></li>
+                <li><a href="/about">about</a></li>
+            </ul>
+        </nav>
+        <main>
+            {{block "content" .}}
+            {{end}}
+        </main>
+        <footer>
+            <p>Powered by <em>lit</em></p>
+        </footer>
+    </body>
+</html>
+{{end}}

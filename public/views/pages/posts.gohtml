@@ -1,0 +1,14 @@
+{{ define "posts" }}
+    {{ template "base" . }}
+{{ end }}
+
+{{define "content"}}
+    <section>
+        <h3>posts</h3>
+        <ul>
+            {{range .Model.Posts}}
+                <li><span>{{.DatePosted}}</span> --- <a href="/posts/{{.Slug}}">{{.Title}}</a></li>
+            {{end}}
+        </ul>
+    </section>
+{{end}}

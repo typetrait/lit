@@ -1,0 +1,12 @@
+{{ define "home" }}
+    {{ template "base" . }}
+{{ end }}
+
+{{define "content"}}
+<section>
+    <h3>latest posts</h3>
+    {{range .Model.Posts}}
+        {{template "post" .}}
+    {{end}}
+</section>
+{{end}}

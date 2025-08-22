@@ -1,0 +1,10 @@
+{{ define "about" }}
+    {{ template "base" . }}
+{{ end }}
+
+{{define "content"}}
+<section>
+    <h3>about</h3>
+    <p>{{.Settings.BlogAbout}}</p>
+</section>
+{{end}}

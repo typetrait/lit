@@ -1,0 +1,10 @@
+{{ define "post" }}
+    {{ template "base" . }}
+{{ end }}
+
+{{define "content"}}
+    <section>
+        <h3>{{.Model.Title}}</h3>
+        {{.Model.HTMLContent}}
+    </section>
+{{end}}
