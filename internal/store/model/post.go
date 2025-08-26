@@ -7,11 +7,12 @@ import (
 )
 
 type Post struct {
-	ID            int64     `gorm:"primaryKey"`
+	ID            int64     `gorm:"primaryKey;auto_increment"`
 	Title         string    `gorm:"unique;not null"`
 	Slug          string    `gorm:"unique;not null"`
 	ContentFormat uint8     `gorm:"not null"`
 	ContentBody   string    `gorm:"type:text;not null"`
+	Status        string    `gorm:"not null"`
 	AuthorID      int64     `gorm:"not null"`
 	Author        User      `gorm:"foreignKey:AuthorID"`
 	CreatedAt     time.Time `gorm:"not null"`
@@ -26,6 +27,7 @@ func (p *Post) ToDomainPost() post.Post {
 			Format: post.ContentFormat(p.ContentFormat),
 			Source: p.ContentBody,
 		},
+		Status:    post.Status(p.Status),
 		Author:    p.Author.ToDomainUser(),
 		CreatedAt: p.CreatedAt,
 	}
@@ -38,6 +40,7 @@ func FromDomainPost(post post.Post) Post {
 		Slug:          post.Slug,
 		ContentFormat: uint8(post.Content.Format),
 		ContentBody:   post.Content.Source,
+		Status:        string(post.Status),
 		AuthorID:      post.Author.ID,
 		Author:        FromDomainUser(post.Author),
 		CreatedAt:     post.CreatedAt,

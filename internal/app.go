@@ -4,6 +4,9 @@ import (
 	"fmt"
 
 	"github.com/labstack/echo/v4"
+	mediaAPI "github.com/typetrait/lit/internal/api/media"
+	postAPI "github.com/typetrait/lit/internal/api/post"
+	"github.com/typetrait/lit/internal/app/media"
 	"github.com/typetrait/lit/internal/app/post"
 	"github.com/typetrait/lit/internal/domain/settings"
 	"github.com/typetrait/lit/internal/store"
@@ -72,7 +75,7 @@ func (app *App) registerRoutes() {
 		app.echo.Logger.Fatal(err)
 	}
 
-	err = db.AutoMigrate(&model.Role{}, &model.User{}, &model.Post{})
+	err = db.AutoMigrate(&model.Role{}, &model.User{}, &model.Post{}, &model.Media{})
 	if err != nil {
 		app.echo.Logger.Fatal(err)
 	}
@@ -84,12 +87,18 @@ func (app *App) registerRoutes() {
 	postRepository := store.NewPostRepository(db)
 	getPost := post.NewGetPost(postRepository)
 	getPosts := post.NewGetPosts(postRepository)
+	createPost := post.NewCreatePost(postRepository)
+	uploadMedia := media.NewUploadMedia()
 
 	homeH := home.NewHandler(getPosts, contentRenderer)
 	aboutH := about.NewHandler()
 	postsH := posts.NewHandler(getPost, getPosts, contentRenderer)
 	signInH := sign_in.NewHandler()
 
+	postAPIH := postAPI.NewAPIHandler(createPost)
+	mediaAPIH := mediaAPI.NewAPIHandler(uploadMedia)
+
+	// Blog
 	app.echo.GET("/", homeH.Get())
 	app.echo.GET("/about", aboutH.Get())
 
@@ -98,4 +107,10 @@ func (app *App) registerRoutes() {
 
 	app.echo.GET("/sign-in", signInH.Get())
 	app.echo.POST("/sign-in", signInH.Post())
+
+	// API
+	apiGroup := app.echo.Group("api")
+	apiGroup.POST("/posts", postAPIH.Draft())
+	apiGroup.PATCH("/posts/:id", postAPIH.Publish())
+	apiGroup.POST("/posts/:id/media", mediaAPIH.Upload())
 }

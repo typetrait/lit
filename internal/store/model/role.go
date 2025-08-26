@@ -5,7 +5,7 @@ import (
 )
 
 type Role struct {
-	ID          int64        `gorm:"primaryKey"`
+	ID          int64        `gorm:"primaryKey;auto_increment"`
 	Name        string       `gorm:"unique;not null"`
 	Permissions []Permission `gorm:"many2many:role_permissions;constraint:OnDelete:CASCADE;"`
 }

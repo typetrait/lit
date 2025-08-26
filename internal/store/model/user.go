@@ -7,7 +7,7 @@ import (
 )
 
 type User struct {
-	ID          int64     `gorm:"primaryKey"`
+	ID          int64     `gorm:"primaryKey;auto_increment"`
 	Email       string    `gorm:"unique;not null"`
 	DisplayName string    `gorm:"unique;not null"`
 	Roles       []Role    `gorm:"many2many:user_roles;constraint:OnDelete:CASCADE;"`

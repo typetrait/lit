@@ -1,10 +1,21 @@
 package post
 
-import "github.com/typetrait/lit/internal/domain/user"
+import (
+	"github.com/typetrait/lit/internal/domain/user"
+)
 
-type CreatePostCommand struct {
-	Title   string
-	Content string
-	Author  user.User
-	Tags    []string
+const (
+	contentFormatMarkdown = "markdown"
+)
+
+type DraftPostCommand struct {
+	Author user.User
+}
+
+type PublishPostCommand struct {
+	ID            int64
+	Title         string
+	ContentFormat string
+	Content       string
+	Author        user.User
 }
