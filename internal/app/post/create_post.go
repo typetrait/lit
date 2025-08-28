@@ -50,7 +50,7 @@ func (cp *CreatePost) Draft(ctx context.Context, draftPostCommand DraftPostComma
 }
 
 func (cp *CreatePost) Publish(ctx context.Context, publishPostCommand PublishPostCommand) (post.Post, error) {
-	existingDraft, err := cp.postRepository.FindByID(ctx, publishPostCommand.ID)
+	existingPost, err := cp.postRepository.FindByID(ctx, publishPostCommand.ID)
 	if err != nil {
 		return post.Post{}, fmt.Errorf("finding draft post: %w", err)
 	}
@@ -61,16 +61,16 @@ func (cp *CreatePost) Publish(ctx context.Context, publishPostCommand PublishPos
 		contentType = post.FormatMarkdown
 	}
 
-	existingDraft.Title = publishPostCommand.Title
-	existingDraft.Slug = cp.defaultSlugStrategy(publishPostCommand.Title)
-	existingDraft.Content = post.Content{
+	existingPost.Title = publishPostCommand.Title
+	existingPost.Slug = cp.defaultSlugStrategy(publishPostCommand.Title)
+	existingPost.Content = post.Content{
 		Format: contentType,
 		Source: publishPostCommand.Content,
 	}
-	existingDraft.Status = post.StatusPublished
-	existingDraft.Author = publishPostCommand.Author
+	existingPost.Status = post.StatusPublished
+	existingPost.Author = publishPostCommand.Author
 
-	publishedPost, err := cp.postRepository.Update(ctx, existingDraft)
+	publishedPost, err := cp.postRepository.Update(ctx, existingPost)
 	if err != nil {
 		return post.Post{}, errors.Join(ErrPostUpdateFailed, err)
 	}

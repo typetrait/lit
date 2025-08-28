@@ -3,14 +3,18 @@ package internal
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsS3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/labstack/echo/v4"
 	mediaAPI "github.com/typetrait/lit/internal/api/media"
 	postAPI "github.com/typetrait/lit/internal/api/post"
 	"github.com/typetrait/lit/internal/app/media"
 	"github.com/typetrait/lit/internal/app/post"
 	"github.com/typetrait/lit/internal/domain/settings"
-	"github.com/typetrait/lit/internal/store"
-	"github.com/typetrait/lit/internal/store/model"
+	"github.com/typetrait/lit/internal/infrastructure"
+	"github.com/typetrait/lit/internal/infrastructure/content"
+	"github.com/typetrait/lit/internal/infrastructure/model"
+	"github.com/typetrait/lit/internal/infrastructure/s3"
 	"github.com/typetrait/lit/internal/web"
 	"github.com/typetrait/lit/internal/web/about"
 	"github.com/typetrait/lit/internal/web/home"
@@ -84,11 +88,19 @@ func (app *App) registerRoutes() {
 		rendering.NewMarkdownRenderer(),
 	)
 
-	postRepository := store.NewPostRepository(db)
+	mediaDetector := content.NewDetector()
+
+	s3Config := aws.Config{}
+	s3Client := awsS3.NewFromConfig(s3Config)
+
+	postRepository := infrastructure.NewPostRepository(db)
+	mediaRepository := infrastructure.NewMediaRepository(db)
+	mediaStorage := s3.NewMediaStorage(s3Client, app.environment.S3Bucket)
+
 	getPost := post.NewGetPost(postRepository)
 	getPosts := post.NewGetPosts(postRepository)
 	createPost := post.NewCreatePost(postRepository)
-	uploadMedia := media.NewUploadMedia()
+	uploadMedia := media.NewUploadMedia(mediaStorage, postRepository, mediaRepository, mediaDetector)
 
 	homeH := home.NewHandler(getPosts, contentRenderer)
 	aboutH := about.NewHandler()
@@ -112,5 +124,7 @@ func (app *App) registerRoutes() {
 	apiGroup := app.echo.Group("api")
 	apiGroup.POST("/posts", postAPIH.Draft())
 	apiGroup.PATCH("/posts/:id", postAPIH.Publish())
+
+	apiGroup.GET("/posts/:post_id/media/:media_id", mediaAPIH.Get())
 	apiGroup.POST("/posts/:id/media", mediaAPIH.Upload())
 }

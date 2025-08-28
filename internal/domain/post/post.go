@@ -22,3 +22,11 @@ type Post struct {
 	Author    user.User
 	CreatedAt time.Time
 }
+
+func (p Post) IsDraft() bool {
+	return p.Status == StatusDraft
+}
+
+func (p Post) IsPublished() bool {
+	return p.Status == StatusPublished
+}

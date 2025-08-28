@@ -1,20 +1,13 @@
 package post
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/typetrait/lit/internal/app/post"
-	domain "github.com/typetrait/lit/internal/domain/post"
 	"github.com/typetrait/lit/internal/domain/user"
 )
-
-type createPost interface {
-	Draft(ctx context.Context, draftPostCommand post.DraftPostCommand) (domain.Post, error)
-	Publish(ctx context.Context, publishPostCommand post.PublishPostCommand) (domain.Post, error)
-}
 
 type APIHandler struct {
 	createPost createPost

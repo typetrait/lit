@@ -1,11 +1,11 @@
-package store
+package infrastructure
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/typetrait/lit/internal/domain/user"
-	"github.com/typetrait/lit/internal/store/model"
+	"github.com/typetrait/lit/internal/infrastructure/model"
 	"gorm.io/gorm"
 )
 

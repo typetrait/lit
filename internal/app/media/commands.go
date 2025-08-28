@@ -7,12 +7,23 @@ type Upload struct {
 	Reader io.ReadCloser
 }
 
-type UploadMediaCommand struct {
-	upload Upload
+func NewUpload(postID int64, reader io.ReadCloser) Upload {
+	return Upload{
+		PostID: postID,
+		Reader: reader,
+	}
 }
 
-func NewUploadMediaCommand(upload Upload) UploadMediaCommand {
+type UploadMediaCommand struct {
+	Upload  Upload
+	Alt     string
+	Caption *string
+}
+
+func NewUploadMediaCommand(upload Upload, alt string, caption *string) UploadMediaCommand {
 	return UploadMediaCommand{
-		upload: upload,
+		Upload:  upload,
+		Alt:     alt,
+		Caption: caption,
 	}
 }

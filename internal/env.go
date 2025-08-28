@@ -7,4 +7,5 @@ type Environment struct {
 	DBPassword     string
 	DBName         string
 	DBPort         string
+	S3Bucket       string
 }

@@ -1,11 +1,11 @@
-package store
+package infrastructure
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/typetrait/lit/internal/domain/media"
-	"github.com/typetrait/lit/internal/store/model"
+	"github.com/typetrait/lit/internal/domain/post"
+	"github.com/typetrait/lit/internal/infrastructure/model"
 	"gorm.io/gorm"
 )
 
@@ -19,10 +19,10 @@ func NewMediaRepository(db *gorm.DB) *MediaRepository {
 	}
 }
 
-func (mr *MediaRepository) Create(ctx context.Context, mediaToCreate media.Media) (media.Media, error) {
+func (mr *MediaRepository) Create(ctx context.Context, mediaToCreate post.Media) (post.Media, error) {
 	mediaModel := model.FromDomainMedia(mediaToCreate)
 	if err := mr.db.WithContext(ctx).Create(&mediaModel).Error; err != nil {
-		return media.Media{}, fmt.Errorf("creating media in repository: %w", err)
+		return post.Media{}, fmt.Errorf("creating media in repository: %w", err)
 	}
 	return mediaModel.ToDomainMedia(), nil
 }

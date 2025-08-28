@@ -24,6 +24,7 @@ func main() {
 		DBPassword:     os.Getenv("DB_PASSWORD"),
 		DBName:         os.Getenv("DB_NAME"),
 		DBPort:         os.Getenv("DB_PORT"),
+		S3Bucket:       os.Getenv("S3_BUCKET"),
 	}
 
 	app := internal.NewApp(&env)

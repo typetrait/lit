@@ -1,22 +1,19 @@
 package media
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/typetrait/lit/internal/app/media"
-	domain "github.com/typetrait/lit/internal/domain/media"
 )
 
 const (
-	MultipartFileFieldName = "file"
+	MultipartFileFieldName    = "file"
+	MultipartAltFieldName     = "alt"
+	MultipartCaptionFieldName = "caption"
 )
-
-type uploadMedia interface {
-	Upload(ctx context.Context, command media.UploadMediaCommand) (domain.Media, error)
-}
 
 type APIHandler struct {
 	uploadMedia uploadMedia
@@ -25,6 +22,31 @@ type APIHandler struct {
 func NewAPIHandler(uploadMedia uploadMedia) *APIHandler {
 	return &APIHandler{
 		uploadMedia: uploadMedia,
+	}
+}
+
+func (h *APIHandler) Get() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		postIDParam := c.Param("id")
+		if postIDParam == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "missing post id")
+		}
+
+		_, err := strconv.ParseInt(postIDParam, 10, 64)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid post id")
+		}
+
+		mediaIDParam := c.Param("media_id")
+		if mediaIDParam == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "missing media id")
+		}
+		_, err = uuid.Parse(mediaIDParam)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid media id")
+		}
+
+		return c.Blob(http.StatusOK, "image/png", nil)
 	}
 }
 
@@ -40,23 +62,36 @@ func (h *APIHandler) Upload() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest, "invalid post id")
 		}
 
+		if c.Request().MultipartForm == nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "request must be valid multipart")
+		}
+
+		altField, ok := c.Request().MultipartForm.Value[MultipartAltFieldName]
+		if !ok {
+			return echo.NewHTTPError(http.StatusBadRequest, "missing multipart alt field")
+		}
+		alt := altField[0]
+
+		var caption *string
+		captionField, ok := c.Request().MultipartForm.Value[MultipartCaptionFieldName]
+		if ok {
+			caption = &captionField[0]
+		}
+
 		file, ok := c.Request().MultipartForm.File[MultipartFileFieldName]
 		if !ok {
 			return echo.NewHTTPError(http.StatusBadRequest, "multipart file not found")
 		}
 
-		reader, err := file[0].Open()
+		fileReader, err := file[0].Open()
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "failed to open file")
 		}
 
-		upload := media.Upload{
-			PostID: postID,
-			Reader: reader,
-		}
+		upload := media.NewUpload(postID, fileReader)
 
 		ctx := c.Request().Context()
-		cmd := media.NewUploadMediaCommand(upload)
+		cmd := media.NewUploadMediaCommand(upload, alt, caption)
 		uploadedMedia, err := h.uploadMedia.Upload(ctx, cmd)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
