@@ -18,7 +18,7 @@ func NewGetPosts(postRepository Repository) *GetPosts {
 }
 
 func (gp *GetPosts) GetPosts(ctx context.Context) ([]post.Post, error) {
-	posts, err := gp.postRepository.FindAll(ctx)
+	posts, err := gp.postRepository.FindAllPublished(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting posts: %w", err)
 	}

@@ -49,6 +49,20 @@ func (r *PostRepository) FindAll(ctx context.Context) ([]post.Post, error) {
 	return posts, nil
 }
 
+func (r *PostRepository) FindAllPublished(ctx context.Context) ([]post.Post, error) {
+	var postModels []model.Post
+	if err := r.db.WithContext(ctx).Find(&postModels, "status = ?", "published").Error; err != nil {
+		return []post.Post{}, fmt.Errorf("finding all published posts: %w", err)
+	}
+
+	var posts []post.Post
+	for _, m := range postModels {
+		posts = append(posts, m.ToDomainPost())
+	}
+
+	return posts, nil
+}
+
 func (r *PostRepository) FindByID(ctx context.Context, id int64) (post.Post, error) {
 	var postModel model.Post
 	if err := r.db.WithContext(ctx).First(&postModel, "id = ?", id).Error; err != nil {

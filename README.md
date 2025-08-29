@@ -4,5 +4,9 @@
 
 ---
 
-# lit
-lit is a minimal blogging engine
+# *lit*
+*lit* is a minimal blogging engine
+
+## Examples
+
+![Personal Blog Example](assets/example.png "Personal Blog Example")
