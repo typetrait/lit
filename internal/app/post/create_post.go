@@ -56,9 +56,11 @@ func (cp *CreatePost) Publish(ctx context.Context, publishPostCommand PublishPos
 	}
 
 	contentType := post.FormatMarkdown
-	switch publishPostCommand.ContentFormat {
+	switch strings.ToLower(publishPostCommand.ContentFormat) {
 	case contentFormatMarkdown:
 		contentType = post.FormatMarkdown
+	default:
+		return post.Post{}, post.ErrInvalidContentFormat
 	}
 
 	existingPost.Title = publishPostCommand.Title

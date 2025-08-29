@@ -25,6 +25,7 @@ func main() {
 		DBName:         os.Getenv("DB_NAME"),
 		DBPort:         os.Getenv("DB_PORT"),
 		S3Bucket:       os.Getenv("S3_BUCKET"),
+		LocalstackHost: os.Getenv("LOCALSTACK_HOST"),
 	}
 
 	app := internal.NewApp(&env)

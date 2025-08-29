@@ -1,11 +1,13 @@
 package post
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/typetrait/lit/internal/app/post"
+	domain "github.com/typetrait/lit/internal/domain/post"
 	"github.com/typetrait/lit/internal/domain/user"
 )
 
@@ -53,6 +55,18 @@ func (h *APIHandler) Publish() echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, err)
 		}
 
+		if publishPostRequest.Title == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "title is required")
+		}
+
+		if publishPostRequest.ContentFormat == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "content format must be specified")
+		}
+
+		if publishPostRequest.Content == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "content is required")
+		}
+
 		publishPostCommand := post.PublishPostCommand{
 			ID:            postID,
 			Title:         publishPostRequest.Title,
@@ -65,6 +79,9 @@ func (h *APIHandler) Publish() echo.HandlerFunc {
 
 		publishedPost, err := h.createPost.Publish(c.Request().Context(), publishPostCommand)
 		if err != nil {
+			if errors.Is(err, domain.ErrInvalidContentFormat) {
+				return c.JSON(http.StatusBadRequest, "content format is invalid")
+			}
 			return c.JSON(http.StatusInternalServerError, err)
 		}
 

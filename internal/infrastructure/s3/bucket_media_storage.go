@@ -6,22 +6,25 @@ import (
 	"io"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 type BucketMediaStorage struct {
 	s3         *s3.Client
+	uploader   *manager.Uploader
 	bucketName string
 }
 
-func NewMediaStorage(s3 *s3.Client, bucketName string) *BucketMediaStorage {
+func NewMediaStorage(s3 *s3.Client, uploader *manager.Uploader, bucketName string) *BucketMediaStorage {
 	return &BucketMediaStorage{
 		s3:         s3,
+		uploader:   uploader,
 		bucketName: bucketName,
 	}
 }
 
-func (s *BucketMediaStorage) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+func (s *BucketMediaStorage) Get(ctx context.Context, key string) (io.Reader, error) {
 	out, err := s.s3.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
@@ -32,11 +35,11 @@ func (s *BucketMediaStorage) Get(ctx context.Context, key string) (io.ReadCloser
 	return out.Body, nil
 }
 
-func (s *BucketMediaStorage) Put(ctx context.Context, key string, readCloser io.ReadCloser) error {
-	_, err := s.s3.PutObject(ctx, &s3.PutObjectInput{
+func (s *BucketMediaStorage) Put(ctx context.Context, key string, reader io.Reader) error {
+	_, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
-		Body:   readCloser,
+		Body:   reader,
 	})
 	if err != nil {
 		return fmt.Errorf("putting object into s3 bucket: %w", err)

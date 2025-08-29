@@ -1,9 +1,11 @@
 package media
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"mime"
 	"strings"
 	"time"
@@ -39,7 +41,14 @@ func NewUploadMedia(
 }
 
 func (um *UploadMedia) Upload(ctx context.Context, cmd UploadMediaCommand) (domain.Media, error) {
-	contentType, err := um.detector.DetectType(cmd.Upload.Reader)
+	headerBytes := make([]byte, 512)
+	n, err := io.ReadFull(cmd.Upload.Reader, headerBytes)
+	if err != nil && err != io.EOF && !errors.Is(err, io.ErrUnexpectedEOF) {
+		return domain.Media{}, fmt.Errorf("reading media header: %w", err)
+	}
+	headerBytes = headerBytes[:n]
+
+	contentType, err := um.detector.DetectType(headerBytes)
 	if err != nil {
 		return domain.Media{}, ErrInvalidMedia
 	}
@@ -53,8 +62,10 @@ func (um *UploadMedia) Upload(ctx context.Context, cmd UploadMediaCommand) (doma
 		return domain.Media{}, fmt.Errorf("finding associated post: %w", err)
 	}
 
+	fullStream := io.MultiReader(bytes.NewReader(headerBytes), cmd.Upload.Reader)
+
 	objectKey := uuid.New()
-	err = um.storage.Put(ctx, objectKey.String(), cmd.Upload.Reader)
+	err = um.storage.Put(ctx, objectKey.String(), fullStream)
 	if err != nil {
 		return domain.Media{}, fmt.Errorf("storing media: %w", err)
 	}

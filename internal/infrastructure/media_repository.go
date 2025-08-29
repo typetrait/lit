@@ -19,10 +19,18 @@ func NewMediaRepository(db *gorm.DB) *MediaRepository {
 	}
 }
 
-func (mr *MediaRepository) Create(ctx context.Context, mediaToCreate post.Media) (post.Media, error) {
+func (r *MediaRepository) Create(ctx context.Context, mediaToCreate post.Media) (post.Media, error) {
 	mediaModel := model.FromDomainMedia(mediaToCreate)
-	if err := mr.db.WithContext(ctx).Create(&mediaModel).Error; err != nil {
+	if err := r.db.WithContext(ctx).Create(&mediaModel).Error; err != nil {
 		return post.Media{}, fmt.Errorf("creating media in repository: %w", err)
+	}
+	return mediaModel.ToDomainMedia(), nil
+}
+
+func (r *MediaRepository) FindByID(ctx context.Context, id int64) (post.Media, error) {
+	var mediaModel model.Media
+	if err := r.db.WithContext(ctx).First(&mediaModel, "id = ?", id).Error; err != nil {
+		return post.Media{}, fmt.Errorf("finding media by ID: %w", err)
 	}
 	return mediaModel.ToDomainMedia(), nil
 }

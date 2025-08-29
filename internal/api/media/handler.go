@@ -1,10 +1,10 @@
 package media
 
 import (
+	"io"
 	"net/http"
 	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/typetrait/lit/internal/app/media"
 )
@@ -16,23 +16,25 @@ const (
 )
 
 type APIHandler struct {
+	getMedia    getMedia
 	uploadMedia uploadMedia
 }
 
-func NewAPIHandler(uploadMedia uploadMedia) *APIHandler {
+func NewAPIHandler(getMedia getMedia, uploadMedia uploadMedia) *APIHandler {
 	return &APIHandler{
+		getMedia:    getMedia,
 		uploadMedia: uploadMedia,
 	}
 }
 
 func (h *APIHandler) Get() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		postIDParam := c.Param("id")
+		postIDParam := c.Param("post_id")
 		if postIDParam == "" {
 			return echo.NewHTTPError(http.StatusBadRequest, "missing post id")
 		}
 
-		_, err := strconv.ParseInt(postIDParam, 10, 64)
+		postID, err := strconv.ParseInt(postIDParam, 10, 64)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "invalid post id")
 		}
@@ -41,12 +43,23 @@ func (h *APIHandler) Get() echo.HandlerFunc {
 		if mediaIDParam == "" {
 			return echo.NewHTTPError(http.StatusBadRequest, "missing media id")
 		}
-		_, err = uuid.Parse(mediaIDParam)
+		mediaID, err := strconv.ParseInt(mediaIDParam, 10, 64)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "invalid media id")
 		}
 
-		return c.Blob(http.StatusOK, "image/png", nil)
+		ctx := c.Request().Context()
+		result, err := h.getMedia.Get(ctx, media.NewGetMediaQuery(postID, mediaID))
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		contentBytes, err := io.ReadAll(result.Content)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		return c.Blob(http.StatusOK, result.Media.Mime, contentBytes)
 	}
 }
 
@@ -60,6 +73,11 @@ func (h *APIHandler) Upload() echo.HandlerFunc {
 		postID, err := strconv.ParseInt(postIDParam, 10, 64)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "invalid post id")
+		}
+
+		err = c.Request().ParseMultipartForm(32 << 20)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "could not parse multipart form")
 		}
 
 		if c.Request().MultipartForm == nil {
@@ -80,7 +98,7 @@ func (h *APIHandler) Upload() echo.HandlerFunc {
 
 		file, ok := c.Request().MultipartForm.File[MultipartFileFieldName]
 		if !ok {
-			return echo.NewHTTPError(http.StatusBadRequest, "multipart file not found")
+			return echo.NewHTTPError(http.StatusBadRequest, "no file to upload")
 		}
 
 		fileReader, err := file[0].Open()

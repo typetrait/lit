@@ -8,4 +8,5 @@ type Environment struct {
 	DBName         string
 	DBPort         string
 	S3Bucket       string
+	LocalstackHost string
 }

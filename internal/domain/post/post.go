@@ -1,6 +1,7 @@
 package post
 
 import (
+	"errors"
 	"time"
 
 	"github.com/typetrait/lit/internal/domain/user"
@@ -11,6 +12,10 @@ type Status string
 const (
 	StatusDraft     Status = "draft"
 	StatusPublished Status = "published"
+)
+
+var (
+	ErrInvalidContentFormat = errors.New("invalid content format")
 )
 
 type Post struct {

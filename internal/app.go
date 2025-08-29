@@ -1,9 +1,12 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	awsS3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/labstack/echo/v4"
 	mediaAPI "github.com/typetrait/lit/internal/api/media"
@@ -90,16 +93,29 @@ func (app *App) registerRoutes() {
 
 	mediaDetector := content.NewDetector()
 
-	s3Config := aws.Config{}
-	s3Client := awsS3.NewFromConfig(s3Config)
+	ctx := context.Background()
+	s3Config, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		app.echo.Logger.Fatal(err)
+		return
+	}
+
+	s3Client := awsS3.NewFromConfig(s3Config, func(o *awsS3.Options) {
+		o.BaseEndpoint = aws.String(app.environment.LocalstackHost)
+		o.UsePathStyle = true
+	})
+
+	uploader := manager.NewUploader(s3Client)
 
 	postRepository := infrastructure.NewPostRepository(db)
 	mediaRepository := infrastructure.NewMediaRepository(db)
-	mediaStorage := s3.NewMediaStorage(s3Client, app.environment.S3Bucket)
+	mediaStorage := s3.NewMediaStorage(s3Client, uploader, app.environment.S3Bucket)
 
 	getPost := post.NewGetPost(postRepository)
 	getPosts := post.NewGetPosts(postRepository)
 	createPost := post.NewCreatePost(postRepository)
+
+	getMedia := media.NewGetMedia(mediaStorage, mediaRepository)
 	uploadMedia := media.NewUploadMedia(mediaStorage, postRepository, mediaRepository, mediaDetector)
 
 	homeH := home.NewHandler(getPosts, contentRenderer)
@@ -108,7 +124,7 @@ func (app *App) registerRoutes() {
 	signInH := sign_in.NewHandler()
 
 	postAPIH := postAPI.NewAPIHandler(createPost)
-	mediaAPIH := mediaAPI.NewAPIHandler(uploadMedia)
+	mediaAPIH := mediaAPI.NewAPIHandler(getMedia, uploadMedia)
 
 	// Blog
 	app.echo.GET("/", homeH.Get())
@@ -120,7 +136,7 @@ func (app *App) registerRoutes() {
 	app.echo.GET("/sign-in", signInH.Get())
 	app.echo.POST("/sign-in", signInH.Post())
 
-	// API
+	// API (/api)
 	apiGroup := app.echo.Group("api")
 	apiGroup.POST("/posts", postAPIH.Draft())
 	apiGroup.PATCH("/posts/:id", postAPIH.Publish())
