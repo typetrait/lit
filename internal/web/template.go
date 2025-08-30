@@ -1,13 +1,14 @@
 package web
 
 import (
+	"context"
 	"html/template"
 	"io"
 	"path/filepath"
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/typetrait/lit/internal/app"
+	settings2 "github.com/typetrait/lit/internal/app/settings"
 	"github.com/typetrait/lit/internal/domain/settings"
 )
 
@@ -21,7 +22,7 @@ type Template struct {
 	settings settings.Settings
 }
 
-func NewTemplate(settingsProvider app.SettingsProvider) *Template {
+func NewTemplate(settingsProvider *settings2.Provider) *Template {
 	base := template.Must(template.ParseFiles("public/views/base.gohtml"))
 
 	base = template.Must(base.ParseGlob("public/views/partials/*.gohtml"))
@@ -42,7 +43,10 @@ func NewTemplate(settingsProvider app.SettingsProvider) *Template {
 	}
 
 	t := &Template{sets: sets}
-	t.settings = settingsProvider.Settings()
+	t.settings, err = settingsProvider.Settings(context.Background())
+	if err != nil {
+		panic(err)
+	}
 	return t
 }
 

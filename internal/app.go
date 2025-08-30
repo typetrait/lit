@@ -13,7 +13,7 @@ import (
 	postAPI "github.com/typetrait/lit/internal/api/post"
 	"github.com/typetrait/lit/internal/app/media"
 	"github.com/typetrait/lit/internal/app/post"
-	"github.com/typetrait/lit/internal/domain/settings"
+	settings2 "github.com/typetrait/lit/internal/app/settings"
 	"github.com/typetrait/lit/internal/infrastructure"
 	"github.com/typetrait/lit/internal/infrastructure/content"
 	"github.com/typetrait/lit/internal/infrastructure/model"
@@ -28,18 +28,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type MockSettingsProvider struct {
-}
-
-func (m MockSettingsProvider) Settings() settings.Settings {
-	return settings.Settings{
-		BlogName:           "Bruno C.",
-		BlogSubtitle:       "software, games, music production",
-		BlogAbout:          "I'm Bruno, a 26yo software developer living in the EU",
-		AdditionalSettings: map[string]any{},
-	}
-}
-
 type App struct {
 	echo        *echo.Echo
 	environment *Environment
@@ -53,11 +41,7 @@ func NewApp(environment *Environment) *App {
 }
 
 func (app *App) Start(address string) {
-	settingsProvider := MockSettingsProvider{}
-	app.echo.Renderer = web.NewTemplate(settingsProvider)
-
 	app.echo.Debug = app.environment.IsDebugEnabled
-
 	app.registerRoutes()
 
 	app.echo.Logger.Fatal(
@@ -82,7 +66,7 @@ func (app *App) registerRoutes() {
 		app.echo.Logger.Fatal(err)
 	}
 
-	err = db.AutoMigrate(&model.Role{}, &model.User{}, &model.Post{}, &model.Media{})
+	err = db.AutoMigrate(&model.Settings{}, &model.Role{}, &model.User{}, &model.Post{}, &model.Media{})
 	if err != nil {
 		app.echo.Logger.Fatal(err)
 	}
@@ -106,6 +90,10 @@ func (app *App) registerRoutes() {
 	})
 
 	uploader := manager.NewUploader(s3Client)
+
+	settingsRepository := infrastructure.NewSettingsRepository(db)
+	settingsProvider := settings2.NewProvider(settingsRepository)
+	app.echo.Renderer = web.NewTemplate(settingsProvider)
 
 	postRepository := infrastructure.NewPostRepository(db)
 	mediaRepository := infrastructure.NewMediaRepository(db)
