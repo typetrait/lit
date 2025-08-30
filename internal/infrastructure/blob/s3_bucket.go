@@ -1,4 +1,4 @@
-package s3
+package blob
 
 import (
 	"context"
@@ -10,21 +10,21 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-type BucketMediaStorage struct {
+type S3BucketStorage struct {
 	s3         *s3.Client
 	uploader   *manager.Uploader
 	bucketName string
 }
 
-func NewMediaStorage(s3 *s3.Client, uploader *manager.Uploader, bucketName string) *BucketMediaStorage {
-	return &BucketMediaStorage{
+func NewS3BucketStorage(s3 *s3.Client, uploader *manager.Uploader, bucketName string) *S3BucketStorage {
+	return &S3BucketStorage{
 		s3:         s3,
 		uploader:   uploader,
 		bucketName: bucketName,
 	}
 }
 
-func (s *BucketMediaStorage) Get(ctx context.Context, key string) (io.Reader, error) {
+func (s *S3BucketStorage) Get(ctx context.Context, key string) (io.Reader, error) {
 	out, err := s.s3.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
@@ -35,7 +35,7 @@ func (s *BucketMediaStorage) Get(ctx context.Context, key string) (io.Reader, er
 	return out.Body, nil
 }
 
-func (s *BucketMediaStorage) Put(ctx context.Context, key string, reader io.Reader) error {
+func (s *S3BucketStorage) Put(ctx context.Context, key string, reader io.Reader) error {
 	_, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
@@ -47,7 +47,7 @@ func (s *BucketMediaStorage) Put(ctx context.Context, key string, reader io.Read
 	return nil
 }
 
-func (s *BucketMediaStorage) Delete(ctx context.Context, key string) error {
+func (s *S3BucketStorage) Delete(ctx context.Context, key string) error {
 	_, err := s.s3.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),

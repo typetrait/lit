@@ -13,11 +13,11 @@ import (
 	postAPI "github.com/typetrait/lit/internal/api/post"
 	"github.com/typetrait/lit/internal/app/media"
 	"github.com/typetrait/lit/internal/app/post"
-	settings2 "github.com/typetrait/lit/internal/app/settings"
-	"github.com/typetrait/lit/internal/infrastructure"
+	"github.com/typetrait/lit/internal/app/settings"
+	"github.com/typetrait/lit/internal/infrastructure/blob"
 	"github.com/typetrait/lit/internal/infrastructure/content"
 	"github.com/typetrait/lit/internal/infrastructure/model"
-	"github.com/typetrait/lit/internal/infrastructure/s3"
+	"github.com/typetrait/lit/internal/infrastructure/repository"
 	"github.com/typetrait/lit/internal/web"
 	"github.com/typetrait/lit/internal/web/about"
 	"github.com/typetrait/lit/internal/web/home"
@@ -89,15 +89,15 @@ func (app *App) registerRoutes() {
 		o.UsePathStyle = true
 	})
 
-	uploader := manager.NewUploader(s3Client)
+	s3Uploader := manager.NewUploader(s3Client)
 
-	settingsRepository := infrastructure.NewSettingsRepository(db)
-	settingsProvider := settings2.NewProvider(settingsRepository)
+	settingsRepository := repository.NewSettingsRepository(db)
+	settingsProvider := settings.NewProvider(settingsRepository)
 	app.echo.Renderer = web.NewTemplate(settingsProvider)
 
-	postRepository := infrastructure.NewPostRepository(db)
-	mediaRepository := infrastructure.NewMediaRepository(db)
-	mediaStorage := s3.NewMediaStorage(s3Client, uploader, app.environment.S3Bucket)
+	postRepository := repository.NewPostRepository(db)
+	mediaRepository := repository.NewMediaRepository(db)
+	mediaStorage := blob.NewS3BucketStorage(s3Client, s3Uploader, app.environment.S3Bucket)
 
 	getPost := post.NewGetPost(postRepository)
 	getPosts := post.NewGetPosts(postRepository)
